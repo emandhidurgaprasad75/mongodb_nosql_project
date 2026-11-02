@@ -1,0 +1,16 @@
+[
+  {
+    "$group": {
+      "_id": null,
+      "total_sales": {
+        "$sum": "$total_amount"
+      },
+      "order_count": {
+        "$sum": 1
+      },
+      "average_order_value": {
+        "$avg": "$total_amount"
+      }
+    }
+  }
+]

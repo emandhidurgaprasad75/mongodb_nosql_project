@@ -1,0 +1,21 @@
+[
+  {
+    "$group": {
+      "_id": "$city",
+      "total_revenue": {
+        "$sum": "$total_amount"
+      },
+      "number_of_orders": {
+        "$sum": 1
+      }
+    }
+  },
+  {
+    "$sort": {
+      "total_revenue": -1
+    }
+  },
+  {
+    "$limit": 10
+  }
+]

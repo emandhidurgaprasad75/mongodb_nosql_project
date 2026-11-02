@@ -1,0 +1,24 @@
+[
+  {
+    "$group": {
+      "_id": "$product_id",
+      "total_units_sold": {
+        "$sum": "$quantity"
+      },
+      "total_revenue": {
+        "$sum": "$total_amount"
+      },
+      "number_of_orders": {
+        "$sum": 1
+      }
+    }
+  },
+  {
+    "$sort": {
+      "total_units_sold": -1
+    }
+  },
+  {
+    "$limit": 10
+  }
+]
