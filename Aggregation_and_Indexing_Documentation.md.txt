@@ -1,0 +1,137 @@
+# E-Commerce Analytics on MongoDB with a Query Optimization Advisor
+
+## 1. Aggregation Analysis
+
+The project uses MongoDB Aggregation Pipelines to analyse e-commerce order data stored in the `orders` collection, containing 100,002 documents.
+
+### 1.1 Total Sales Analysis
+
+**Objective:** Calculate total revenue, total number of orders, and average order value.
+
+**MongoDB stages:** `$group`
+
+```json
+{
+  "_id": null,
+  "total_sales": { "$sum": "$total_amount" },
+  "order_count": { "$sum": 1 },
+  "average_order_value": { "$avg": "$total_amount" }
+}
+```
+
+**Observed results:**
+- Total sales: ₹509,750,563.61
+- Total orders: 100,002
+- Average order value: ₹5,097.40
+
+### 1.2 Payment Method Analysis
+
+**Objective:** Analyse revenue and number of orders for each payment method.
+
+**MongoDB stages:** `$group`, `$sort`
+
+```json
+{
+  "_id": "$payment_method",
+  "total_revenue": { "$sum": "$total_amount" },
+  "number_of_orders": { "$sum": 1 }
+}
+```
+
+The results are sorted by `total_revenue` in descending order.
+
+### 1.3 Top Products Analysis
+
+**Objective:** Identify the top 10 products based on units sold.
+
+**MongoDB stages:** `$group`, `$sort`, `$limit`
+
+```json
+{
+  "_id": "$product_id",
+  "total_units_sold": { "$sum": "$quantity" },
+  "total_revenue": { "$sum": "$total_amount" },
+  "number_of_orders": { "$sum": 1 }
+}
+```
+
+The pipeline sorts by `total_units_sold` in descending order and limits the output to 10 products.
+
+### 1.4 City Revenue Analysis
+
+**Objective:** Identify cities generating the highest revenue.
+
+**MongoDB stages:** `$group`, `$sort`, `$limit`
+
+```json
+{
+  "_id": "$city",
+  "total_revenue": { "$sum": "$total_amount" },
+  "number_of_orders": { "$sum": 1 }
+}
+```
+
+The results are sorted by revenue in descending order, with the top 10 cities displayed.
+
+## 2. Indexing and Query Performance
+
+Indexes were created on the `orders` collection to improve query performance.
+
+| Index name | Purpose |
+|---|---|
+| `_id_` | Default unique document identifier |
+| `customer_id_1` | Customer-based searches |
+| `order_date_-1` | Date-based sorting |
+| `customer_id_1_order_date_-1` | Customer filtering and date sorting |
+
+### 2.1 Compound Index
+
+A compound index was created using:
+- `customer_id`: Ascending
+- `order_date`: Descending
+
+Index name: `customer_id_1_order_date_-1`
+
+### 2.2 Explain Plan Comparison
+
+The same query was tested using two different indexes:
+
+**Query filter:**
+```json
+{
+  "customer_id": "CUST06392"
+}
+```
+
+**Sort:**
+```json
+{
+  "order_date": -1
+}
+```
+
+| Metric | Compound index | Single-field index |
+|---|---:|---:|
+| Index used | `customer_id_1_order_date_-1` | `customer_id_1` |
+| Documents returned | 11 | 11 |
+| Documents examined | 11 | 11 |
+| Index keys examined | 11 | 11 |
+| In-memory sorting | No | Yes |
+| Execution time observed | 7 ms | 0 ms |
+
+**Observation:** The compound index supported both customer filtering and date sorting without an additional in-memory SORT stage. The single-field index required an additional SORT stage. Execution times are observed measurements and may vary between runs.
+
+## 3. Query Optimization Recommendations
+
+Two recommendation records were inserted into the `optimization_recommendations` collection.
+
+| ID | Recommendation | Status |
+|---|---|---|
+| REC001 | Use a compound index for customer filtering and date sorting | Implemented |
+| REC002 | Use a customer ID index for customer-based order lookup | Implemented |
+
+These records document the indexing recommendations and their implementation in the project.
+
+## 4. Conclusion
+
+MongoDB aggregation pipelines were used to analyse sales, payment methods, products, and city-wise revenue. Indexes and Explain Plan were used to study query execution and sorting behaviour. The project demonstrates practical use of MongoDB CRUD, aggregation, indexing, and query performance analysis.
